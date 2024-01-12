@@ -1,0 +1,11 @@
+# Django
+
+.vscode/
+.idea/
+venv/*
+.venv/*
+__pycache__/
+# staticfiles
+# db.sqlite3
+# migrations
+.DS_Store
