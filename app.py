@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
+from flask import Flask, request, jsonify, make_response
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 import psycopg2 
@@ -34,7 +34,7 @@ def too_large(e):
 
 @app.route('/', methods=['GET'])
 def index():
-    return "You are not supposed to be here."
+    return "You are not supposed to be here.<br/><br/>If any queries, kindly mail to: pavankumarmaurya1999@gmail.com."
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
