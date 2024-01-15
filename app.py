@@ -20,7 +20,7 @@ def db_disconnect(conn, cur):
     conn.close()
 
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'media/images')
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'media\images')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -48,51 +48,64 @@ def upload_file():
                 if current_url.split("/")[-2] == "tc":
                     name = name +"-(" + request.form('studentStd') + ")"
                 conn,cur=db_connect()
-                cur.execute('''SELECT COUNT(*) FROM Images WHERE image_type=%s''', (image_type))       
+                cur.execute(f'SELECT COUNT(*) FROM public."Image" WHERE image_type=\'{image_type}\'')       
                 # Fetch the data 
                 data = cur.fetchall()
-                print(data)
-                cnt=data+1
+                cnt=data[0][0]+1
                 for file in images:
                     if file and allowed_file(file.filename):
                         filename = secure_filename(file.filename)
                         # Save the files
                         try:
                             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                            cur.execute('''INSERT INTO IMAGES \
+                            cur.execute(f'''INSERT INTO public."Image" \
                                         (name, image, image_type, sequence_no) VALUES\
-                                        (%s, %s, %s, %s)
-                                        ''',
-                                        (name, f'images/{filename}', image_type, cnt))
-                            conn.commit()
-                            db_disconnect(conn,cur)
-                            return make_response(jsonify({'message':'Images uploaded successfully'}),200)
+                                        (\'{name}\', \'images/{filename}\', \'{image_type}\', \'{cnt}\')
+                                        ''')
+                            cnt+=1
                         except Exception as e:
                             db_disconnect(conn,cur)
                             return f'Error saving file: {str(e)}', 500
                     elif not allowed_file(file.filename):
                         db_disconnect(conn,cur)
                         return make_response(jsonify({'message':'File type not allowed.'}), 400)
+                conn.commit()
+                db_disconnect(conn,cur)
+                return make_response(jsonify({'message':'Images uploaded successfully'}),200)
             else:
                 return make_response(jsonify({'message': 'No images found in the request.'}), 400)
         except Exception as e:
+            db_disconnect(conn,cur)
             return make_response(jsonify({'message': 'Images upload failed.','error': e}), 400)
 
 @app.route('/delete', methods=['POST']) 
 def delete(): 
-    conn, cur = db_connect()
-    current_url = request.form['current_url']
-    images_to_delete = request.form['images_to_delete']
-    images_to_delete = images_to_delete.split(",")
-    for image_id in images_to_delete:
-        # Delete the data from the table 
-        cur.execute('''DELETE FROM Images WHERE id=%s''', (image_id,)) 
-  
-    # commit the changes 
-    conn.commit() 
+    try:
+        conn, cur = db_connect()
+        current_url = request.form['current_url']
+        images_to_delete = request.form['images_to_delete']
+        images_to_delete = images_to_delete.split(",")
+        for image_id in images_to_delete:
+            # Delete the data from the table
+            cur.execute(f'''SELECT * FROM public."Image" WHERE id=\'{image_id}\'''')
+            obj = cur.fetchone()
+            if obj is None:
+                db_disconnect(conn,cur) 
+                return make_response(jsonify({'message':'Image not found.'}), 404)
+            file = os.path.join(BASE_DIR, f'media\{obj[2]}')
+            if os.path.isfile(file):
+                os.remove(file)
+                cur.execute(f'''DELETE FROM public."Image" WHERE id=\'{image_id}\'''') 
+            else:
+                return make_response(jsonify({'message':'No such file/image exists.'}),404)
+        # commit the changes 
+        conn.commit() 
+        db_disconnect(conn,cur) 
+        return make_response(jsonify({'message':'Images deleted successfully'}),200)
+    except Exception as e:
+        db_disconnect(conn,cur)
+        return make_response(jsonify({'message':'Images not deleted.', 'error': e}),400)
+    
 
-    db_disconnect(conn,cur) 
-  
-    return redirect(url_for('index')) 
 if __name__ == '__main__': 
 	app.run(debug=True) 
