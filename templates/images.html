@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>SQLite Viewer Flask</title>
+</head>
+
+<body>
+  <h1>Images</h1>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Path</th>
+      <th>Type</th>
+      <th>Sequence No.</th>
+    </tr>
+    {% for image in images %}
+    <tr>
+      <td>{{ image.id }}</td>
+      <td>{{ image.name }}</td>
+      <td>{{ image.image }}</td>
+      <td>{{ image.image_type}}</td>
+      <td>{{ image.sequence_no }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+
+</html>
