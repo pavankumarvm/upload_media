@@ -94,11 +94,10 @@ def delete():
             if os.path.isfile(file):
                 os.remove(file)
                 db.session.delete(obj)
-                db.session.commit() 
             else:
                 db.session.delete(obj)
-                db.session.commit() 
                 return make_response(jsonify({'message':'No such file/image exists.'}),404)
+            db.session.commit() 
         return make_response(jsonify({'message':'Images deleted successfully'}),200)
     except Exception as e:
         return make_response(jsonify({'message':'Images not deleted.', 'error': e}),400)
